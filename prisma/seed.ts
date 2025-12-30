@@ -1,23 +1,42 @@
-// This file is excluded from TypeScript compilation
-// It's only used for database seeding via: npm run db:seed
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 async function main() {
-  // Seed data will be added in Phase 1
-  // This is a placeholder file
-  // Prisma client will be imported when database is set up
   console.log('Seeding database...');
-  console.log('No seed data configured yet.');
-  
-  // TODO: Uncomment when Prisma is set up
-  // import { PrismaClient } from '@prisma/client';
-  // const prisma = new PrismaClient();
-  // ... seed logic here
-  // await prisma.$disconnect();
+
+  // Create some default tags
+  const tags = [
+    { name: 'Tech', category: 'Electronics', isSystemTag: true },
+    { name: 'Fashion', category: 'Clothing', isSystemTag: true },
+    { name: 'Books', category: 'Media', isSystemTag: true },
+    { name: 'Sports', category: 'Outdoor', isSystemTag: true },
+    { name: 'Gaming', category: 'Entertainment', isSystemTag: true },
+    { name: 'Music', category: 'Entertainment', isSystemTag: true },
+    { name: 'Art', category: 'Creative', isSystemTag: true },
+    { name: 'Cooking', category: 'Home', isSystemTag: true },
+    { name: 'Outdoor', category: 'Recreation', isSystemTag: true },
+    { name: 'Beauty', category: 'Personal Care', isSystemTag: true },
+  ];
+
+  for (const tag of tags) {
+    await prisma.tag.upsert({
+      where: { name: tag.name },
+      update: {},
+      create: tag,
+    });
+  }
+
+  console.log('✅ Seeded default tags');
+  console.log('Seeding completed!');
 }
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error('Error seeding database:', e);
     process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
   });
 

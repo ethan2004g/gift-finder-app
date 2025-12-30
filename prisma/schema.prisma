@@ -10,6 +10,221 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// We'll add the full schema in Phase 1
-// For now, this is a placeholder
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String    @map("password_hash")
+  name          String?
+  emailVerified Boolean   @default(false) @map("email_verified")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  lastLogin     DateTime? @map("last_login")
 
+  // Relations
+  recipientProfiles RecipientProfile[]
+  searches          Search[]
+  savedProducts     SavedProduct[]
+  giftLists         GiftList[]
+  ecommerceSites    EcommerceSite[]
+  apiUsage          ApiUsage[]
+
+  @@map("users")
+}
+
+model RecipientProfile {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  name        String
+  relationship String?
+  ageRange    String?   @map("age_range")
+  gender      String?
+  description String?
+  interests   String[]
+  likes       String[]
+  dislikes    String[]
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  searches   Search[]
+  savedProducts SavedProduct[]
+  giftLists  GiftList[]
+
+  @@map("recipient_profiles")
+}
+
+model Search {
+  id                String    @id @default(uuid())
+  userId            String    @map("user_id")
+  recipientProfileId String? @map("recipient_profile_id")
+  queryText         String    @map("query_text")
+  aiAnalysis        Json?     @map("ai_analysis")
+  extractedKeywords String[]  @map("extracted_keywords")
+  budgetMin         Decimal?  @map("budget_min") @db.Decimal(10, 2)
+  budgetMax         Decimal?  @map("budget_max") @db.Decimal(10, 2)
+  occasion          String?
+  createdAt         DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipientProfile RecipientProfile? @relation(fields: [recipientProfileId], references: [id])
+  searchResults   SearchResult[]
+
+  @@map("searches")
+}
+
+model Product {
+  id          String    @id @default(uuid())
+  externalId  String?   @map("external_id")
+  source      String
+  title       String
+  description String?
+  price       Decimal?  @db.Decimal(10, 2)
+  currency    String    @default("USD")
+  imageUrl    String?   @map("image_url")
+  productUrl  String    @map("product_url")
+  rating      Decimal?  @db.Decimal(3, 2)
+  reviewCount Int?      @map("review_count")
+  tags        String[]
+  categories  String[]
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  searchResults  SearchResult[]
+  savedProducts  SavedProduct[]
+  productTags    ProductTag[]
+  giftListItems  GiftListItem[]
+
+  @@unique([externalId, source])
+  @@map("products")
+}
+
+model SearchResult {
+  id            String   @id @default(uuid())
+  searchId      String   @map("search_id")
+  productId     String   @map("product_id")
+  relevanceScore Decimal? @map("relevance_score") @db.Decimal(5, 2)
+  position      Int?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  search  Search  @relation(fields: [searchId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("search_results")
+}
+
+model SavedProduct {
+  id                String   @id @default(uuid())
+  userId            String   @map("user_id")
+  productId         String   @map("product_id")
+  recipientProfileId String? @map("recipient_profile_id")
+  notes             String?
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product         Product         @relation(fields: [productId], references: [id])
+  recipientProfile RecipientProfile? @relation(fields: [recipientProfileId], references: [id])
+
+  @@map("saved_products")
+}
+
+model Tag {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  category    String?
+  isSystemTag Boolean  @default(false) @map("is_system_tag")
+  usageCount  Int      @default(0) @map("usage_count")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  productTags ProductTag[]
+
+  @@map("tags")
+}
+
+model ProductTag {
+  productId String @map("product_id")
+  tagId     String @map("tag_id")
+
+  // Relations
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([productId, tagId])
+  @@map("product_tags")
+}
+
+model EcommerceSite {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  name            String
+  baseUrl         String   @map("base_url")
+  searchUrlPattern String? @map("search_url_pattern")
+  isActive        Boolean  @default(true) @map("is_active")
+  isPublic        Boolean  @default(false) @map("is_public")
+  logoUrl         String?  @map("logo_url")
+  config          Json?
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("ecommerce_sites")
+}
+
+model GiftList {
+  id                String   @id @default(uuid())
+  userId            String   @map("user_id")
+  recipientProfileId String? @map("recipient_profile_id")
+  name              String
+  description       String?
+  occasion          String?
+  eventDate         DateTime? @map("event_date") @db.Date
+  isPublic          Boolean  @default(false) @map("is_public")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipientProfile RecipientProfile? @relation(fields: [recipientProfileId], references: [id])
+  items           GiftListItem[]
+
+  @@map("gift_lists")
+}
+
+model GiftListItem {
+  id          String   @id @default(uuid())
+  listId     String   @map("list_id")
+  productId  String   @map("product_id")
+  priority   Int?     // 1=high, 2=medium, 3=low
+  isPurchased Boolean  @default(false) @map("is_purchased")
+  notes      String?
+  addedAt    DateTime @default(now()) @map("added_at")
+
+  // Relations
+  list    GiftList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  product Product  @relation(fields: [productId], references: [id])
+
+  @@map("gift_list_items")
+}
+
+model ApiUsage {
+  id          String   @id @default(uuid())
+  userId      String?  @map("user_id")
+  service     String
+  endpoint    String?
+  tokensUsed  Int?     @map("tokens_used")
+  cost        Decimal? @db.Decimal(10, 4)
+  responseTime Int?    @map("response_time") // milliseconds
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id])
+
+  @@map("api_usage")
+}

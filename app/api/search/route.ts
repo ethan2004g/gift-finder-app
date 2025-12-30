@@ -1,0 +1,128 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { handleApiError, ApiError } from '@/lib/api/error-handler';
+import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/logger';
+import { analyzeRecipient } from '@/lib/api/openai';
+
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.id) {
+      throw new ApiError(401, 'Unauthorized');
+    }
+
+    const body = await request.json();
+    const {
+      queryText,
+      recipientProfileId,
+      relationship,
+      ageRange,
+      gender,
+      interests,
+      likes,
+      dislikes,
+      description,
+      budgetMin,
+      budgetMax,
+      occasion,
+    } = body;
+
+    if (!queryText && !description && !interests?.length) {
+      throw new ApiError(400, 'Query text, description, or interests are required');
+    }
+
+    // Perform AI analysis if OpenAI is configured
+    let aiAnalysis = null;
+    if (process.env.OPENAI_API_KEY) {
+      try {
+        aiAnalysis = await analyzeRecipient(
+          {
+            relationship,
+            ageRange,
+            gender,
+            interests: Array.isArray(interests) ? interests : [],
+            likes: Array.isArray(likes) ? likes : [],
+            dislikes: Array.isArray(dislikes) ? dislikes : [],
+            description: description || queryText,
+            budgetMin: budgetMin ? parseFloat(budgetMin) : undefined,
+            budgetMax: budgetMax ? parseFloat(budgetMax) : undefined,
+            occasion,
+          },
+          session.user.id
+        );
+      } catch (error) {
+        logger.warn('AI analysis failed, continuing without it', { error });
+        // Continue without AI analysis if it fails
+      }
+    }
+
+    // Create search record with AI analysis
+    const search = await prisma.search.create({
+      data: {
+        userId: session.user.id,
+        queryText: queryText || description || 'AI-generated search',
+        recipientProfileId: recipientProfileId || null,
+        aiAnalysis: aiAnalysis ? (aiAnalysis as any) : null,
+        extractedKeywords: aiAnalysis?.extractedKeywords || [],
+        budgetMin: budgetMin ? parseFloat(budgetMin) : null,
+        budgetMax: budgetMax ? parseFloat(budgetMax) : null,
+        occasion: occasion || null,
+      },
+    });
+
+    logger.info('Search created', {
+      searchId: search.id,
+      userId: session.user.id,
+      hasAiAnalysis: !!aiAnalysis,
+    });
+
+    return NextResponse.json(
+      {
+        message: 'Search created successfully',
+        search: {
+          id: search.id,
+          queryText: search.queryText,
+          aiAnalysis,
+          createdAt: search.createdAt,
+        },
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    return handleApiError(error);
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.id) {
+      throw new ApiError(401, 'Unauthorized');
+    }
+
+    const searches = await prisma.search.findMany({
+      where: {
+        userId: session.user.id,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: 50,
+      select: {
+        id: true,
+        queryText: true,
+        createdAt: true,
+        occasion: true,
+      },
+    });
+
+    return NextResponse.json({ searches });
+  } catch (error) {
+    return handleApiError(error);
+  }
+}
+
