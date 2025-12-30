@@ -6,6 +6,12 @@ import bcrypt from 'bcryptjs';
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if database is connected
+    if (!process.env.DATABASE_URL) {
+      logger.error('DATABASE_URL not configured');
+      throw new ApiError(500, 'Database configuration error');
+    }
+
     const body = await request.json();
     const { email, password, name } = body;
 
@@ -16,6 +22,14 @@ export async function POST(request: NextRequest) {
 
     if (password.length < 8) {
       throw new ApiError(400, 'Password must be at least 8 characters');
+    }
+
+    // Test database connection
+    try {
+      await prisma.$connect();
+    } catch (dbError) {
+      logger.error('Database connection failed', { error: dbError });
+      throw new ApiError(500, 'Database connection failed');
     }
 
     // Check if user exists
@@ -55,6 +69,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
+    logger.error('Signup error', { error });
     return handleApiError(error);
   }
 }
