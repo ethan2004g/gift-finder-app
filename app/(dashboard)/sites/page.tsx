@@ -21,10 +21,6 @@ export default function SitesPage() {
         icon="🛍️"
         title="No custom sites yet"
         description="Add your favorite ecommerce sites to include them in your searches."
-        action={{
-          label: 'Add Site',
-          onClick: () => console.log('Add site'),
-        }}
       />
     </div>
   );

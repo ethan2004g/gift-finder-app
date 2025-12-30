@@ -18,7 +18,7 @@ export default function SavedPage() {
         description="Start searching for gifts and save the ones you like!"
         action={{
           label: 'Start Searching',
-          onClick: () => window.location.href = '/search',
+          href: '/search',
         }}
       />
     </div>

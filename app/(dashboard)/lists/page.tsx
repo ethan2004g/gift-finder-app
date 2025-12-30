@@ -21,10 +21,6 @@ export default function ListsPage() {
         icon="📋"
         title="No gift lists yet"
         description="Create a list to organize gifts for a specific person or occasion."
-        action={{
-          label: 'Create List',
-          onClick: () => console.log('Create list'),
-        }}
       />
     </div>
   );

@@ -21,10 +21,6 @@ export default function RecipientsPage() {
         icon="👥"
         title="No recipients yet"
         description="Create recipient profiles to save their preferences and make future searches easier."
-        action={{
-          label: 'Add Recipient',
-          onClick: () => console.log('Add recipient'),
-        }}
       />
     </div>
   );
