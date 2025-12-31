@@ -7,7 +7,7 @@ import { logger } from '@/lib/logger';
 // GET /api/tags/[tagId] - Get a specific tag
 export async function GET(
   request: NextRequest,
-  { params }: { params: { tagId: string } }
+  { params }: { params: Promise<{ tagId: string }> }
 ) {
   try {
     const session = await auth();
@@ -16,8 +16,10 @@ export async function GET(
       throw new ApiError(401, 'Unauthorized');
     }
 
+    const { tagId } = await params;
+
     const tag = await prisma.tag.findUnique({
-      where: { id: params.tagId },
+      where: { id: tagId },
       include: {
         productTags: {
           take: 20,
@@ -49,7 +51,7 @@ export async function GET(
 // PATCH /api/tags/[tagId] - Update a tag
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { tagId: string } }
+  { params }: { params: Promise<{ tagId: string }> }
 ) {
   try {
     const session = await auth();
@@ -58,8 +60,10 @@ export async function PATCH(
       throw new ApiError(401, 'Unauthorized');
     }
 
+    const { tagId } = await params;
+
     const tag = await prisma.tag.findUnique({
-      where: { id: params.tagId },
+      where: { id: tagId },
     });
 
     if (!tag) {
@@ -75,7 +79,7 @@ export async function PATCH(
     const { name, category } = body;
 
     const updatedTag = await prisma.tag.update({
-      where: { id: params.tagId },
+      where: { id: tagId },
       data: {
         ...(name && { name: name.toLowerCase().trim() }),
         ...(category !== undefined && { category }),
@@ -96,7 +100,7 @@ export async function PATCH(
 // DELETE /api/tags/[tagId] - Delete a tag
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { tagId: string } }
+  { params }: { params: Promise<{ tagId: string }> }
 ) {
   try {
     const session = await auth();
@@ -105,8 +109,10 @@ export async function DELETE(
       throw new ApiError(401, 'Unauthorized');
     }
 
+    const { tagId } = await params;
+
     const tag = await prisma.tag.findUnique({
-      where: { id: params.tagId },
+      where: { id: tagId },
     });
 
     if (!tag) {
@@ -119,11 +125,11 @@ export async function DELETE(
     }
 
     await prisma.tag.delete({
-      where: { id: params.tagId },
+      where: { id: tagId },
     });
 
     logger.info('Tag deleted', {
-      tagId: params.tagId,
+      tagId,
       userId: session.user.id,
     });
 

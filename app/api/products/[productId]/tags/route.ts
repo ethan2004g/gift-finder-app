@@ -7,7 +7,7 @@ import { logger } from '@/lib/logger';
 // POST /api/products/[productId]/tags - Assign tags to a product
 export async function POST(
   request: NextRequest,
-  { params }: { params: { productId: string } }
+  { params }: { params: Promise<{ productId: string }> }
 ) {
   try {
     const session = await auth();
@@ -16,6 +16,7 @@ export async function POST(
       throw new ApiError(401, 'Unauthorized');
     }
 
+    const { productId } = await params;
     const body = await request.json();
     const { tagIds } = body;
 
@@ -25,7 +26,7 @@ export async function POST(
 
     // Verify product exists
     const product = await prisma.product.findUnique({
-      where: { id: params.productId },
+      where: { id: productId },
     });
 
     if (!product) {
@@ -44,12 +45,12 @@ export async function POST(
         return prisma.productTag.upsert({
           where: {
             productId_tagId: {
-              productId: params.productId,
+              productId,
               tagId,
             },
           },
           create: {
-            productId: params.productId,
+            productId,
             tagId,
           },
           update: {},
@@ -58,7 +59,7 @@ export async function POST(
     );
 
     logger.info('Tags assigned to product', {
-      productId: params.productId,
+      productId,
       tagCount: tagIds.length,
       userId: session.user.id,
     });
@@ -72,7 +73,7 @@ export async function POST(
 // DELETE /api/products/[productId]/tags - Remove tags from a product
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { productId: string } }
+  { params }: { params: Promise<{ productId: string }> }
 ) {
   try {
     const session = await auth();
@@ -81,6 +82,7 @@ export async function DELETE(
       throw new ApiError(401, 'Unauthorized');
     }
 
+    const { productId } = await params;
     const body = await request.json();
     const { tagIds } = body;
 
@@ -91,7 +93,7 @@ export async function DELETE(
     // Remove product-tag associations
     await prisma.productTag.deleteMany({
       where: {
-        productId: params.productId,
+        productId,
         tagId: { in: tagIds },
       },
     });
@@ -107,7 +109,7 @@ export async function DELETE(
     );
 
     logger.info('Tags removed from product', {
-      productId: params.productId,
+      productId,
       tagCount: tagIds.length,
       userId: session.user.id,
     });
