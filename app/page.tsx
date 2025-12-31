@@ -66,6 +66,50 @@ export default function Home() {
           </div>
         </div>
 
+        <div className="mt-16">
+          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-8">
+            Why Gift Finder?
+          </h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+              <div className="text-4xl mb-3">🤖</div>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+                AI-Powered
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Smart recommendations based on personality and preferences
+              </p>
+            </div>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+              <div className="text-4xl mb-3">🛍️</div>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+                Multi-Store
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Search across Amazon, and many other retailers
+              </p>
+            </div>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+              <div className="text-4xl mb-3">💾</div>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+                Save & Organize
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Create gift lists and save ideas for later
+              </p>
+            </div>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+              <div className="text-4xl mb-3">🏷️</div>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+                Smart Tags
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Browse by interests, hobbies, and occasions
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div className="mt-16 text-sm text-gray-500 dark:text-gray-400">
           <p>🚀 Next.js App Router • TypeScript • Tailwind CSS • shadcn/ui</p>
         </div>
