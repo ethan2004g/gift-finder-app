@@ -4,9 +4,19 @@ import { prisma } from '../prisma';
 import { RecipientAnalysis } from '@/types/search';
 import { cache, generateCacheKey } from '../utils/cache';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+let openaiInstance: OpenAI | null = null;
+
+function getOpenAIClient(): OpenAI {
+  if (!openaiInstance) {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY is not configured');
+    }
+    openaiInstance = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  }
+  return openaiInstance;
+}
 
 const MODEL = process.env.OPENAI_MODEL || 'gpt-3.5-turbo';
 const MAX_TOKENS = parseInt(process.env.OPENAI_MAX_TOKENS || '1000');
@@ -46,6 +56,7 @@ export async function analyzeRecipient(
     }
 
     // Call OpenAI API
+    const openai = getOpenAIClient();
     const response = await openai.chat.completions.create({
       model: MODEL,
       messages: [
