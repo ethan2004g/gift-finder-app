@@ -71,13 +71,22 @@ function ResultsContent() {
           throw new Error('Failed to fetch search');
         }
         const data = await response.json();
-        setAnalysis(data.search.aiAnalysis);
+        
+        if (!data.search) {
+          throw new Error('Search not found');
+        }
+
+        setAnalysis(data.search.aiAnalysis || null);
         setIsLoading(false);
 
-        // Now search for products using the AI-generated queries
-        if (data.search.aiAnalysis?.searchQueries) {
+        // Now search for products using the AI-generated queries or keywords
+        const queries = data.search.aiAnalysis?.searchQueries || 
+                       data.search.extractedKeywords || 
+                       [data.search.queryText];
+                       
+        if (queries && queries.length > 0) {
           setIsSearchingProducts(true);
-          await searchProducts(data.search.aiAnalysis.searchQueries);
+          await searchProducts(queries);
         }
       } catch (err: any) {
         setError(err.message || 'An error occurred');
@@ -142,89 +151,92 @@ function ResultsContent() {
     );
   }
 
-  if (!analysis) {
-    return (
-      <div className="bg-yellow-100 dark:bg-yellow-900 border border-yellow-400 dark:border-yellow-700 text-yellow-700 dark:text-yellow-300 px-6 py-4 rounded-lg">
-        <p>No analysis found for this search.</p>
-        <Link href="/search" className="mt-4 inline-block text-sm underline">
-          Start a New Search
-        </Link>
-      </div>
-    );
-  }
+  const hasAnalysis = analysis && Object.keys(analysis).length > 0;
 
   return (
     <div className="space-y-8">
       {/* Analysis Summary */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-          🎯 Gift Recommendations Ready!
-        </h2>
-        
-        <div className="grid md:grid-cols-3 gap-6">
-          {/* Keywords */}
-          <div>
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-              Keywords
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {analysis.extractedKeywords.slice(0, 8).map((keyword, i) => (
-                <span
-                  key={i}
-                  className="px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-full text-sm"
-                >
-                  {keyword}
-                </span>
-              ))}
+      {!hasAnalysis ? (
+        <div className="bg-yellow-100 dark:bg-yellow-900 border border-yellow-400 dark:border-yellow-700 text-yellow-700 dark:text-yellow-300 px-6 py-4 rounded-lg">
+          <h3 className="font-semibold mb-2">⚠️ AI Analysis Not Available</h3>
+          <p className="text-sm">
+            OpenAI API key is not configured. Searching for products using basic keyword matching.
+          </p>
+          <p className="text-xs mt-2">
+            To enable AI-powered recommendations, add OPENAI_API_KEY to your environment variables.
+          </p>
+        </div>
+      ) : (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            🎯 Gift Recommendations Ready!
+          </h2>
+          
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Keywords */}
+            <div>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+                Keywords
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {(analysis?.extractedKeywords || []).slice(0, 8).map((keyword, i) => (
+                  <span
+                    key={i}
+                    className="px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-full text-sm"
+                  >
+                    {keyword}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Categories */}
+            <div>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+                Categories
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {(analysis?.suggestedCategories || []).slice(0, 5).map((category, i) => (
+                  <span
+                    key={i}
+                    className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full text-sm"
+                  >
+                    {category}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Gift Themes */}
+            <div>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+                Gift Themes
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {(analysis?.giftThemes || []).slice(0, 5).map((theme, i) => (
+                  <span
+                    key={i}
+                    className="px-3 py-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full text-sm"
+                  >
+                    {theme}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Categories */}
-          <div>
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-              Categories
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {analysis.suggestedCategories.slice(0, 5).map((category, i) => (
-                <span
-                  key={i}
-                  className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full text-sm"
-                >
-                  {category}
-                </span>
-              ))}
+          <div className="mt-4 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+            <span className="font-semibold">Confidence:</span>
+            <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2 max-w-xs">
+              <div
+                className="bg-purple-600 h-2 rounded-full"
+                style={{ width: `${(analysis?.confidenceScore || 0.5) * 100}%` }}
+              />
             </div>
-          </div>
-
-          {/* Gift Themes */}
-          <div>
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-              Gift Themes
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {analysis.giftThemes.slice(0, 5).map((theme, i) => (
-                <span
-                  key={i}
-                  className="px-3 py-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full text-sm"
-                >
-                  {theme}
-                </span>
-              ))}
-            </div>
+            <span>{Math.round((analysis?.confidenceScore || 0.5) * 100)}%</span>
           </div>
         </div>
-
-        <div className="mt-4 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-          <span className="font-semibold">Confidence:</span>
-          <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2 max-w-xs">
-            <div
-              className="bg-purple-600 h-2 rounded-full"
-              style={{ width: `${analysis.confidenceScore * 100}%` }}
-            />
-          </div>
-          <span>{Math.round(analysis.confidenceScore * 100)}%</span>
-        </div>
-      </div>
+      )}
 
       {/* Product Results by Site (Bubble Layout) */}
       <div>

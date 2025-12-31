@@ -103,6 +103,36 @@ export async function GET(request: NextRequest) {
       throw new ApiError(401, 'Unauthorized');
     }
 
+    const { searchParams } = new URL(request.url);
+    const searchId = searchParams.get('searchId');
+
+    // If searchId is provided, fetch single search
+    if (searchId) {
+      const search = await prisma.search.findUnique({
+        where: {
+          id: searchId,
+          userId: session.user.id, // Ensure user owns this search
+        },
+        select: {
+          id: true,
+          queryText: true,
+          aiAnalysis: true,
+          extractedKeywords: true,
+          budgetMin: true,
+          budgetMax: true,
+          occasion: true,
+          createdAt: true,
+        },
+      });
+
+      if (!search) {
+        throw new ApiError(404, 'Search not found');
+      }
+
+      return NextResponse.json({ search });
+    }
+
+    // Otherwise, return list of searches
     const searches = await prisma.search.findMany({
       where: {
         userId: session.user.id,
