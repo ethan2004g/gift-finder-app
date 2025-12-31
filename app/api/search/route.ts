@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from 'next-auth';
 import { handleApiError, ApiError } from '@/lib/api/error-handler';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
@@ -8,7 +7,7 @@ import { analyzeRecipient } from '@/lib/api/openai';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     if (!session?.user?.id) {
       throw new ApiError(401, 'Unauthorized');
@@ -98,7 +97,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     if (!session?.user?.id) {
       throw new ApiError(401, 'Unauthorized');
