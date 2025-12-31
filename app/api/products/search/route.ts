@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from 'next-auth';
+import { auth } from '@/lib/nextauth';
 import { handleApiError, ApiError } from '@/lib/api/error-handler';
 import { productService } from '@/lib/api/product-service';
 import { logger } from '@/lib/logger';
