@@ -91,7 +91,7 @@ export function ProductDetailModal({ product, isOpen, onClose }: ProductDetailMo
                     <div className="flex items-center gap-1">
                       <span className="text-yellow-400">★</span>
                       <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {product.rating.toFixed(1)}
+                        {typeof product.rating === 'number' ? product.rating.toFixed(1) : parseFloat(product.rating.toString()).toFixed(1)}
                         {product.reviewCount && ` (${product.reviewCount} reviews)`}
                       </span>
                     </div>
@@ -106,10 +106,10 @@ export function ProductDetailModal({ product, isOpen, onClose }: ProductDetailMo
                 {product.title}
               </h3>
 
-              {product.price && (
+              {product.price !== null && product.price !== undefined && (
                 <div className="flex items-baseline gap-2">
                   <span className="text-4xl font-bold text-purple-600 dark:text-purple-400">
-                    ${product.price.toFixed(2)}
+                    ${typeof product.price === 'number' ? product.price.toFixed(2) : parseFloat(product.price.toString()).toFixed(2)}
                   </span>
                   {product.currency && product.currency !== 'USD' && (
                     <span className="text-sm text-gray-500 dark:text-gray-400">
