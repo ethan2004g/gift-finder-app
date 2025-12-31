@@ -8,25 +8,17 @@ let openaiInstance: OpenAI | null = null;
 
 function getOpenAIClient(): OpenAI {
   if (!openaiInstance) {
-    const apiKey = process.env.OPENAI_API_KEY || process.env.DEEPSEEK_API_KEY;
-    if (!apiKey) {
-      throw new Error('OPENAI_API_KEY or DEEPSEEK_API_KEY is not configured');
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY is not configured');
     }
-    
-    // Support for DeepSeek API (OpenAI-compatible)
-    const baseURL = process.env.DEEPSEEK_API_KEY 
-      ? 'https://api.deepseek.com/v1'
-      : undefined;
-    
     openaiInstance = new OpenAI({
-      apiKey,
-      baseURL,
+      apiKey: process.env.OPENAI_API_KEY,
     });
   }
   return openaiInstance;
 }
 
-const MODEL = process.env.AI_MODEL || process.env.OPENAI_MODEL || 'deepseek-chat';
+const MODEL = process.env.OPENAI_MODEL || 'gpt-3.5-turbo';
 const MAX_TOKENS = parseInt(process.env.OPENAI_MAX_TOKENS || '1000');
 
 interface AnalyzeRecipientParams {
