@@ -17,8 +17,11 @@ export const authOptions = {
             return null;
           }
 
+          const email = credentials.email as string;
+          const password = credentials.password as string;
+
           const user = await prisma.user.findUnique({
-            where: { email: credentials.email },
+            where: { email },
           });
 
           if (!user || !user.passwordHash) {
@@ -27,12 +30,12 @@ export const authOptions = {
           }
 
           const isValid = await bcrypt.compare(
-            credentials.password,
+            password,
             user.passwordHash
           );
 
           if (!isValid) {
-            logger.warn('Login attempt with invalid password', { email: credentials.email });
+            logger.warn('Login attempt with invalid password', { email });
             return null;
           }
 
@@ -55,7 +58,7 @@ export const authOptions = {
             name: user.name,
           };
         } catch (error) {
-          logger.error('Authentication error', { error, email: credentials?.email });
+          logger.error('Authentication error', { error, email: credentials?.email as string | undefined });
           return null;
         }
       },
